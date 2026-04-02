@@ -1,0 +1,127 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model Book {
+    id          String @id @default(cuid())
+    title       String
+    price       Float
+    publisherId String
+    publisher   Publisher @relation(fields: [publisherId], references: [id])
+
+    authors BookAuthor[]
+    genres  BookGenre[]
+    formats BookFormat[]
+    
+    reviews     Review[]
+    orderItems  OrderItem[]
+
+    createdAt DateTime @default(now())
+
+    @@index([title])
+}
+
+model Author {
+    id      String @id @default(cuid())
+    name    String
+
+    books   BookAuthor[]
+
+    @@index([name])
+}
+
+model BookAuthor{
+    bookId      String
+    authorId    String
+
+    book    Book @relation(fields: [bookId], references: [id])
+    author  Author @relation(fields: [authorId], references: [id])
+
+    @@id([bookId, authorId])
+}
+
+model Genre {
+    id      String @id @default(cuid())
+    name    String
+
+    books   BookGenre[]
+}
+
+model BookGenre {
+    bookId  String
+    genreId String
+
+    book    Book    @relation(fields: [bookId], references: [id])
+    genre   Genre   @relation (fields: [genreId], references: [id])
+
+    @@id([bookId, genreId]) 
+}
+
+model Publisher {
+    id      String @id @default(cuid())
+    name    String
+
+    books Book[]
+}
+
+model BookFormat {
+    id      String @id @default(cuid())
+    type    FormatType
+    book    Book    @relation(fields: [bookId], references: [id])
+    bookId  String
+
+    @@unique([bookId, type])
+}
+
+enum FormatType {
+    HARDCOVER
+    SOFTCOVER
+    AUDIOBOOK
+    EREADER
+}
+
+model User {
+    id      String @id @default(cuid())
+    name    String
+
+    reviews Review[]
+    orders  Order[]
+}
+
+model Review {
+    id      String @id @default(cuid())
+    rating  Int
+
+    userId  String
+    bookId  String
+
+    user    User    @relation(fields: [userId], references: [id])
+    book    Book    @relation(fields: [bookId], references: [id])
+
+    @@unique([userId, bookId])
+}
+
+model Order {
+    id          String  @id @default(cuid())
+    userId      String
+    user        User    @relation(fields: [userId], references: [id])
+    items       OrderItem[]
+    createdAt   DateTime    @default(now())
+}
+
+model OrderItem {
+    id          String @id @default(cuid())
+    orderId     String
+    bookId      String
+    format      FormatType
+    quantity    Int
+    price       Float
+
+    order   Order   @relation(fields: [orderId], references: [id])
+    book    Book    @relation(fields: [bookId], references: [id])
+}
